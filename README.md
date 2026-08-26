@@ -1,9 +1,5 @@
 # @accuren/multiplier
 
-```bash
-npm i @accuren/multiplier
-```
-
 Exact decimal arithmetic and multiplier maths for tokenized stocks.
 
 A tokenized stock is not a share; it is a claim on one, and a `multiplier`
@@ -57,8 +53,40 @@ for (const change of changesIn(series)) {
   never traded; this walks both series together so income is computed against
   what was actually held at that block.
 
-MIT.
+## Contributing
 
----
+Bugs in the arithmetic matter more here than features. If a figure comes out
+wrong, open an issue with the inputs that produced it — a failing test is the
+best possible bug report.
 
-Part of [Accuren](https://accuren.xyz), which keeps the tax record for self-custodied tokenized stocks. The archive is the product; the maths is not, so the maths is public.
+```bash
+pnpm install
+pnpm test        # node --test, no runner
+pnpm typecheck
+```
+
+## Part of a set
+
+Four small libraries that split the work of keeping a tax record for
+self-custodied tokenized stocks. Each stands alone; use one or all four.
+
+| Package | Does |
+|---|---|
+| **`@accuren/multiplier`** | Exact decimals and the multiplier maths — you are here |
+| [`@accuren/cost-basis`](https://github.com/accuren/cost-basis) | Lot engine, and whether the event was a sale at all |
+| [`@accuren/fx`](https://github.com/accuren/fx) | Historical rates carrying source and date |
+| [`@accuren/market-hours`](https://github.com/accuren/market-hours) | Sessions, staleness, and weekend exposure |
+
+> **Not on npm yet.** Clone it, or add it as a git dependency, until the
+> first release. `cost-basis` and `fx` depend on `@accuren/multiplier`, so that
+> one gets published first.
+
+**Requirements:** Node 22.18+ (native type stripping). No build step, no
+bundler, no runtime dependencies — the package exports its TypeScript source
+and the tests run on `node --test`.
+
+## Licence
+
+MIT. Part of [Accuren](https://accuren.xyz), which keeps the tax record for
+self-custodied tokenized stocks. The archive is the product; the maths is not,
+so the maths is public.
