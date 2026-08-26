@@ -52,6 +52,10 @@ for (const change of changesIn(series)) {
 - `valueAt(series, date)` — the multiplier that applied on a date, or `null`.
   A gap you can see beats a number you cannot check.
 - `coverageGaps(series, maxGapDays)` — ranges the archive cannot answer for.
+- `accrualsOver(series, balances)` — accruals when the balance itself moved.
+  `accrualFor` assumes one balance for one change, which is only true if you
+  never traded; this walks both series together so income is computed against
+  what was actually held at that block.
 
 MIT.
 

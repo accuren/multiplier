@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   accrualFor,
+  accrualsOver,
   changesIn,
   classifyChange,
   coverageGaps,
@@ -108,4 +109,39 @@ test("coverage gaps are reported rather than smoothed over", () => {
   const series = [at(1, "2026-01-01", "1.0000"), at(2, "2026-06-01", "1.0338")];
   assert.deepEqual(coverageGaps(series, 45), [{ from: "2026-01-01", to: "2026-06-01" }]);
   assert.deepEqual(coverageGaps(series, 200), []);
+});
+
+test("accruals follow the balance you actually held at each block", () => {
+  const series = [
+    at(100, "2026-01-01", "1.0000"),
+    at(200, "2026-04-01", "1.0100"),
+    at(300, "2026-07-01", "1.0200"),
+  ];
+  // Bought 100 at block 50, sold half at block 250.
+  const balances = [
+    { block: 50, balance: dec("100") },
+    { block: 250, balance: dec("50") },
+  ];
+
+  const accruals = accrualsOver(series, balances);
+  assert.equal(accruals.length, 2);
+  // First change: still holding 100, multiplier +0.01 → 1 share.
+  assert.equal(formatShares(accruals[0]!.sharesAccrued), "1.000000");
+  // Second change: only 50 left, so half the income. Using a single balance
+  // would have doubled it.
+  assert.equal(formatShares(accruals[1]!.sharesAccrued), "0.500000");
+});
+
+test("nothing accrues before you held anything", () => {
+  const series = [at(100, "2026-01-01", "1.0000"), at(200, "2026-04-01", "1.0100")];
+  const accruals = accrualsOver(series, [{ block: 500, balance: dec("100") }]);
+  assert.equal(accruals.length, 0);
+});
+
+test("unordered balances are a bug and say so", () => {
+  const series = [at(100, "2026-01-01", "1.0000"), at(200, "2026-04-01", "1.0100")];
+  assert.throws(
+    () => accrualsOver(series, [{ block: 300, balance: dec("1") }, { block: 100, balance: dec("2") }]),
+    /not ordered/,
+  );
 });

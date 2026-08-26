@@ -120,6 +120,46 @@ export function accrualFor(
   };
 }
 
+/** What you held, from a block onwards. */
+export type BalancePoint = { readonly block: number; readonly balance: Dec };
+
+/**
+ * Accruals across a series when the balance itself moved.
+ *
+ * `accrualFor` assumes one balance for one change, which is only true if you
+ * never traded. Real holders buy, sell, and post collateral between
+ * distributions, and the income that accrued depends on what was held *at that
+ * block* — so this walks both series together.
+ *
+ * `balances` must be ordered by block. The balance in force is the last one at
+ * or before the change; a change before the first balance point accrues
+ * nothing, because you held nothing.
+ */
+export function accrualsOver(
+  series: readonly MultiplierPoint[],
+  balances: readonly BalancePoint[],
+  scale = 6,
+): Accrual[] {
+  for (let i = 1; i < balances.length; i++) {
+    if (balances[i]!.block <= balances[i - 1]!.block) {
+      throw new RangeError(`balances are not ordered: block ${balances[i]!.block} follows ${balances[i - 1]!.block}`);
+    }
+  }
+
+  const out: Accrual[] = [];
+  for (const change of changesIn(series)) {
+    let held: Dec | null = null;
+    for (const point of balances) {
+      if (point.block <= change.to.block) held = point.balance;
+      else break;
+    }
+    if (!held) continue;
+    const accrual = accrualFor(change, held, scale);
+    if (accrual) out.push(accrual);
+  }
+  return out;
+}
+
 /**
  * Walk an ordered series of readings and return every step.
  *
